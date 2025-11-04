@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Akses Kamera Langsung & Pemindai</title>
+    <title>Pemindai Kode QR/AR</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body {
@@ -13,84 +13,117 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f0f0f0;
+            background-color: #333; /* Latar belakang gelap untuk fokus kamera */
             margin: 0;
+            color: white;
             text-align: center;
+            position: relative; /* Untuk menempatkan elemen relatif terhadap body */
         }
-
-        #reader-container {
-            width: 90%;
-            max-width: 500px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Bayangan lebih jelas */
-        }
-
+        
         h2 {
-            color: #1e88e5; /* Warna biru */
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            font-size: 1.5em;
         }
 
+        /* CONTAINER UTAMA PEMINDAI */
         #reader {
-            width: 100%;
-            border: 3px solid #1e88e5; /* Border biru lebih tebal */
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        #result {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #e6ffe6;
-            border: 1px solid #4CAF50;
+            width: 90%;
+            max-width: 400px;
+            position: relative; /* Penting untuk menempatkan overlay di atasnya */
+            background-color: black;
             border-radius: 5px;
-            display: none; /* Sembunyikan hasil awal */
-            font-weight: bold;
-            color: #333;
         }
 
-        #decoded-text {
-            color: #007bff;
-            word-break: break-all; /* Memastikan teks panjang tidak merusak layout */
+        /* OVERLAY HIASAN (Panduan Pemindaian) */
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%; /* Ukuran panduan, sesuaikan dengan qrbox di JS */
+            height: 70%;
+            border: 2px dashed #007bff; /* Garis panduan berhias */
+            border-radius: 10px;
+            pointer-events: none; /* Agar tidak mengganggu klik di kamera */
+            z-index: 10;
+        }
+
+        /* HASIL PEMINDAIAN */
+        #result-display {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none; /* Sembunyikan sampai hasil ditemukan */
+            width: 80%;
+            max-width: 400px;
+        }
+
+        #result-link {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            margin-top: 10px;
+            display: inline-block;
+        }
+        #result-link:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-    <div id="reader-container">
-        <h2>Akses Kamera & Siap Memindai QR 📸</h2>
-        <p>Mohon berikan izin kamera pada browser Anda.</p>
-        <div id="reader"></div>
-        <div id="result">Hasil Pemindaian: <span id="decoded-text"></span></div>
+    <h2>Pindai Kode QR/AR Anda 📸</h2>
+    
+    <div id="reader">
+        <div id="overlay"></div> 
+    </div>
+
+    <div id="result-display">
+        <p>Kode ditemukan!</p>
+        <a id="result-link" target="_blank">Buka Tautan Hasil</a>
     </div>
 
     <script>
-        const cameraId = "reader";
-
+        // Fungsi yang dipanggil saat pemindaian berhasil
         function onScanSuccess(decodedText, decodedResult) {
-            // Ketika kode berhasil dipindai
-            document.getElementById('decoded-text').textContent = decodedText;
-            document.getElementById('result').style.display = 'block';
-            console.log(Code matched = ${decodedText});
+            console.log(`Kode dipindai: ${decodedText}`);
+            
+            // Hentikan pemindaian
+            html5QrcodeScanner.clear();
+
+            // Tampilkan hasil dan tautan
+            const resultDisplay = document.getElementById('result-display');
+            const resultLink = document.getElementById('result-link');
+            
+            resultLink.href = decodedText; // Mengatur tautan hasil
+            resultDisplay.style.display = 'block';
+
+            // Opsional: Jika Anda ingin kembali ke menu setelah pemindaian berhasil:
+            // setTimeout(() => { window.location.href = 'kalkulator.html'; }, 3000); 
         }
 
+        // Fungsi yang dipanggil saat pemindaian gagal/terjadi kesalahan
         function onScanError(errorMessage) {
-            // Error ditangani secara internal oleh library
+            // Kita biarkan saja, karena ini biasanya error debug
         }
 
-        // Inisialisasi objek Html5QrcodeScanner
+        // Inisialisasi pemindai
         const html5QrcodeScanner = new Html5QrcodeScanner(
-            cameraId, 
-            { 
-                fps: 10,                 
-                qrbox: {width: 250, height: 250}, 
-                rememberLastUsedCamera: true     
+            "reader", { 
+                fps: 10, // Frames per second
+                qrbox: {width: 250, height: 250}, // Ukuran kotak pemindaian
+                rememberLastUsedCamera: true 
             },
-            /* verbose= */ false
-        );
-
-        // Memulai pemindaian dan meminta izin kamera
+            /* verbose= */ false);
+        
+        // Render pemindai ke elemen div#reader
         html5QrcodeScanner.render(onScanSuccess, onScanError);
+
     </script>
 </body>
 </html>
